@@ -1,12 +1,17 @@
-﻿# ktsu.dev Blog
+# ktsu.dev Blog
 
-Welcome to my technical blog repository! This is where I share my experiences, insights, and deep dives into software development, debugging adventures, and architectural discoveries.
+Welcome to the ktsu.dev technical blog. This is where I share my experiences, insights, and deep dives into software development, debugging adventures, and architectural discoveries.
 
 ## Latest Posts
 
 ### [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./dotnet-project-guid-conflicts-build-server-debugging.md)
-**Published:** June 14, 2025 | **Status:** complete
+
+**Published:** June 14, 2025
+
+**Status:** complete
+
 **Categories:** Development, Debugging, Architecture
+
 **Tags:** dotnet, debugging, nuget, msbuild, troubleshooting, build-server, project-guid, visual-studio, git-worktrees, architecture, design-flaw
 
 A deep dive into debugging a cryptic .NET restore error that reveals a fundamental design flaw in MSBuild's GUID-based project identity system and its impact on modern development workflows.
@@ -26,19 +31,19 @@ A deep dive into debugging a cryptic .NET restore error that reveals a fundament
 
 ## Posts by Tags
 
-### .NET and C#
+### Architecture and Design
 - [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./dotnet-project-guid-conflicts-build-server-debugging.md)
 
-### Build Systems and MSBuild
+### Development Tools
 - [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./dotnet-project-guid-conflicts-build-server-debugging.md)
 
 ### Troubleshooting and Debugging
 - [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./dotnet-project-guid-conflicts-build-server-debugging.md)
 
-### Architecture and Design
+### .NET and C#
 - [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./dotnet-project-guid-conflicts-build-server-debugging.md)
 
-### Development Tools
+### Build Systems and MSBuild
 - [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./dotnet-project-guid-conflicts-build-server-debugging.md)
 
 ## Blog Stats
