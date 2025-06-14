@@ -143,7 +143,7 @@ $sortedPosts = $posts | Sort-Object {
 $readmeContent = @()
 $readmeContent += "# ktsu.dev Blog"
 $readmeContent += ""
-$readmeContent += "Welcome to my technical blog repository! This is where I share my experiences, insights, and deep dives into software development, debugging adventures, and architectural discoveries."
+$readmeContent += "Welcome to the ktsu.dev technical blog. This is where I share my experiences, insights, and deep dives into software development, debugging adventures, and architectural discoveries."
 $readmeContent += ""
 
 # Latest Posts section
