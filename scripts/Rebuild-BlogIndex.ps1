@@ -152,25 +152,30 @@ $readmeContent += ""
 
 foreach ($post in $sortedPosts) {
     $readmeContent += "### [$($post.title)]($($post.RelativePath))"
+    $readmeContent += ""
     $publishedDate = Format-BlogDate -DateString $post.created
     $status = if ($post.status) { $post.status } else { "Unknown" }
-    $readmeContent += "**Published:** $publishedDate | **Status:** $status"
+    $readmeContent += "**Published:** $publishedDate"
+    $readmeContent += ""
+    $readmeContent += "**Status:** $status"
+    $readmeContent += ""
     
     if ($post.categories) {
         $categories = if ($post.categories -is [array]) { $post.categories -join ', ' } else { $post.categories }
         $readmeContent += "**Categories:** $categories"
+        $readmeContent += ""
     }
     
     if ($post.tags) {
         $tags = if ($post.tags -is [array]) { $post.tags -join ', ' } else { $post.tags }
         $readmeContent += "**Tags:** $tags"
+        $readmeContent += ""
     }
     
-    $readmeContent += ""
     if ($post.description) {
         $readmeContent += $post.description
+        $readmeContent += ""
     }
-    $readmeContent += ""
     $readmeContent += "---"
     $readmeContent += ""
 }
