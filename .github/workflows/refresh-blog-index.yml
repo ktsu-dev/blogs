@@ -1,0 +1,41 @@
+name: Refresh Blog Index
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.md'
+      - '!README.md'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  update-index:
+    runs-on: windows-latest
+    name: Update Blog Index
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run PowerShell Script
+        shell: pwsh
+        run: |
+          ./scripts/Rebuild-BlogIndex.ps1
+          
+      - name: Check for Changes
+        id: check-changes
+        run: |
+          git diff --quiet README.md || echo "changes=true" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Commit Changes
+        if: steps.check-changes.outputs.changes == 'true'
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add README.md
+          git commit -m "Auto-update blog index [skip ci]"
+          git push
+        shell: bash 
