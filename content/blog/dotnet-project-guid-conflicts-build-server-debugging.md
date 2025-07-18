@@ -3,7 +3,7 @@ title: "Debugging the Mysterious 'Unable to find a project to restore' Error in 
 author: "Matt Edmondson"
 created: 2025-06-14
 modified: 2025-06-14
-status: complete
+status: published
 description: "A deep dive into debugging a cryptic .NET restore error that reveals a fundamental design flaw in MSBuild's GUID-based project identity system and its impact on modern development workflows."
 categories: [Development, Debugging, Architecture]
 tags: [dotnet, debugging, nuget, msbuild, troubleshooting, build-server, project-guid, visual-studio, git-worktrees, architecture, design-flaw]

@@ -1,14 +1,14 @@
-# ktsu.dev Blog
+﻿# ktsu.dev Blog
 
 Welcome to the ktsu.dev technical blog. This is where I share my experiences, insights, and deep dives into software development, debugging adventures, and architectural discoveries.
 
 ## Latest Posts
 
-### [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./dotnet-project-guid-conflicts-build-server-debugging.md)
+### [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 
 **Published:** June 14, 2025
 
-**Status:** complete
+**Status:** published
 
 **Categories:** Development, Debugging, Architecture
 
@@ -21,30 +21,30 @@ A deep dive into debugging a cryptic .NET restore error that reveals a fundament
 ## Posts by Category
 
 ### Architecture
-- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./dotnet-project-guid-conflicts-build-server-debugging.md)
+- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 
 ### Debugging
-- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./dotnet-project-guid-conflicts-build-server-debugging.md)
+- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 
 ### Development
-- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./dotnet-project-guid-conflicts-build-server-debugging.md)
+- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 
 ## Posts by Tags
 
-### Architecture and Design
-- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./dotnet-project-guid-conflicts-build-server-debugging.md)
-
-### Development Tools
-- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./dotnet-project-guid-conflicts-build-server-debugging.md)
-
-### Troubleshooting and Debugging
-- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./dotnet-project-guid-conflicts-build-server-debugging.md)
-
 ### .NET and C#
-- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./dotnet-project-guid-conflicts-build-server-debugging.md)
+- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 
 ### Build Systems and MSBuild
-- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./dotnet-project-guid-conflicts-build-server-debugging.md)
+- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
+
+### Troubleshooting and Debugging
+- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
+
+### Architecture and Design
+- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
+
+### Development Tools
+- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 
 ## Blog Stats
 
@@ -66,7 +66,7 @@ All blog posts are written in Markdown and include comprehensive frontmatter wit
 - **Categories**: High-level topic groupings
 - **Tags**: Specific technology and concept tags
 - **Keywords**: SEO and searchability terms
-- **Status**: Draft, review, complete tracking
+- **Status**: Draft, review, published tracking
 - **Dates**: Created and modified timestamps
 
 ## Connect

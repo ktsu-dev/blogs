@@ -82,7 +82,7 @@ function Get-BlogPostMetadata {
         $fileInfo = Get-Item -Path $FilePath
         $metadata['FileName'] = $fileInfo.Name
         $metadata['FilePath'] = $fileInfo.Name
-        $metadata['RelativePath'] = "./$($fileInfo.Name)"
+        $metadata['RelativePath'] = "./content/blog/$($fileInfo.Name)"
         
         return $metadata
     }
@@ -112,8 +112,8 @@ function Format-BlogDate {
 # Main script
 Write-Host "Rebuilding blog index..." -ForegroundColor Cyan
 
-# Find all markdown files except README.md
-$blogPosts = Get-ChildItem -Path $Path -Filter "*.md" -File | 
+# Find all markdown files in the content/blog directory except README.md
+$blogPosts = Get-ChildItem -Path (Join-Path $Path "content\blog") -Filter "*.md" -File | 
     Where-Object { $_.Name -ne "README.md" }
 
 Write-Host "Found $($blogPosts.Count) blog post(s)" -ForegroundColor Green
@@ -123,15 +123,20 @@ $posts = @()
 foreach ($post in $blogPosts) {
     Write-Host "   Processing: $($post.Name)" -ForegroundColor Gray
     $metadata = Get-BlogPostMetadata -FilePath $post.FullName
-    if ($metadata) {
+    if ($metadata -and $metadata.status -eq "published") {
         $posts += $metadata
+    }
+    elseif ($metadata) {
+        Write-Host "   Skipping: $($post.Name) (status: $($metadata.status))" -ForegroundColor Yellow
     }
 }
 
 if ($posts.Count -eq 0) {
-    Write-Error "No valid blog posts found with frontmatter"
+    Write-Error "No valid blog posts found with status 'published'"
     exit 1
 }
+
+Write-Host "Found $($posts.Count) published blog post(s)" -ForegroundColor Green
 
 # Sort posts by date (newest first)
 $sortedPosts = $posts | Sort-Object { 
@@ -285,7 +290,7 @@ $readmeContent += "All blog posts are written in Markdown and include comprehens
 $readmeContent += "- **Categories**: High-level topic groupings"
 $readmeContent += "- **Tags**: Specific technology and concept tags"
 $readmeContent += "- **Keywords**: SEO and searchability terms"
-$readmeContent += "- **Status**: Draft, review, complete tracking"
+$readmeContent += "- **Status**: Draft, review, published tracking"
 $readmeContent += "- **Dates**: Created and modified timestamps"
 $readmeContent += ""
 $readmeContent += "## Connect"
