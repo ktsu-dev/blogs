@@ -1,9 +1,9 @@
 ---
 title: "C# Using Directives: IDE0055 Format Violations Don't Always Trigger as Expected"
 author: "Matt Edmondson"
-created: 2025-03-27
-modified: 2025-03-27
-status: draft
+created: 2025-07-18
+modified: 2025-07-18
+status: published
 description: "A deep dive into C# IDE0055 formatting rule's unexpected behavior with using directives, explaining why some formatting issues don't trigger violations and how to handle this quirk."
 categories: ["Development", "C#"]
 tags: ["csharp", "formatting", "roslyn", "ide0055", "using-directives"]

@@ -4,6 +4,34 @@ Welcome to the ktsu.dev technical blog. This is where I share my experiences, in
 
 ## Latest Posts
 
+### [C# Object Initializers Run After Code in the Default Constructor](./content/blog/csharp-object-initializers-run-after-code-in-the-default-constructor.md)
+
+**Published:** July 18, 2025
+
+**Status:** published
+
+**Categories:** Development, C#
+
+**Tags:** csharp, object-initializers, constructors
+
+A deep dive into C# object initialization order, explaining why object initializers run after the default constructor and how to handle this behavior effectively.
+
+---
+
+### [C# Using Directives: IDE0055 Format Violations Don't Always Trigger as Expected](./content/blog/csharp-using-directives-inconsistent-formatting-rules.md)
+
+**Published:** July 18, 2025
+
+**Status:** published
+
+**Categories:** Development, C#
+
+**Tags:** csharp, formatting, roslyn, ide0055, using-directives
+
+A deep dive into C# IDE0055 formatting rule's unexpected behavior with using directives, explaining why some formatting issues don't trigger violations and how to handle this quirk.
+
+---
+
 ### [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 
 **Published:** June 14, 2025
@@ -23,21 +51,21 @@ A deep dive into debugging a cryptic .NET restore error that reveals a fundament
 ### Architecture
 - [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 
+### C#
+- [C# Object Initializers Run After Code in the Default Constructor](./content/blog/csharp-object-initializers-run-after-code-in-the-default-constructor.md)
+- [C# Using Directives: IDE0055 Format Violations Don't Always Trigger as Expected](./content/blog/csharp-using-directives-inconsistent-formatting-rules.md)
+
 ### Debugging
 - [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 
 ### Development
+- [C# Object Initializers Run After Code in the Default Constructor](./content/blog/csharp-object-initializers-run-after-code-in-the-default-constructor.md)
+- [C# Using Directives: IDE0055 Format Violations Don't Always Trigger as Expected](./content/blog/csharp-using-directives-inconsistent-formatting-rules.md)
 - [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 
 ## Posts by Tags
 
-### Development Tools
-- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
-
 ### Troubleshooting and Debugging
-- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
-
-### .NET and C#
 - [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 
 ### Build Systems and MSBuild
@@ -46,11 +74,19 @@ A deep dive into debugging a cryptic .NET restore error that reveals a fundament
 ### Architecture and Design
 - [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 
+### .NET and C#
+- [C# Object Initializers Run After Code in the Default Constructor](./content/blog/csharp-object-initializers-run-after-code-in-the-default-constructor.md)
+- [C# Using Directives: IDE0055 Format Violations Don't Always Trigger as Expected](./content/blog/csharp-using-directives-inconsistent-formatting-rules.md)
+- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
+
+### Development Tools
+- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
+
 ## Blog Stats
 
-- **Total Posts:** 1
-- **Categories:** 3 (Architecture, Debugging, Development)
-- **Most Recent:** June 14, 2025
+- **Total Posts:** 3
+- **Categories:** 4 (Architecture, C#, Debugging, Development)
+- **Most Recent:** July 18, 2025
 
 ## About This Blog
 

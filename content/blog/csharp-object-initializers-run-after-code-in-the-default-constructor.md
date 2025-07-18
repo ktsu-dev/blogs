@@ -1,9 +1,9 @@
 ---
 title: "C# Object Initializers Run After Code in the Default Constructor"
 author: "Matt Edmondson"
-created: 2025-06-14
-modified: 2025-06-14
-status: draft
+created: 2025-07-18
+modified: 2025-07-18
+status: published
 description: "A deep dive into C# object initialization order, explaining why object initializers run after the default constructor and how to handle this behavior effectively."
 categories: ["Development", "C#"]
 tags: ["csharp", "object-initializers", "constructors"]
