@@ -91,12 +91,12 @@ A deep dive into debugging a cryptic .NET restore error that reveals a fundament
 ### Troubleshooting and Debugging
 - [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 
+### Development Tools
+- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
+
 ### Architecture and Design
 - [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 - [Eliminating Primitive Obsession in C# with Semantic Types](./content/blog/csharp-eliminating-primitive-obsession-with-semantic-types.md)
-
-### Development Tools
-- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 
 ### Build Systems and MSBuild
 - [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
