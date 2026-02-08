@@ -57,6 +57,8 @@ This "one file per actor" approach means that locking a single file blocks only 
 
 ### The Locking Protocol
 
+//TODO: rewrite this section to be about the git lfs plugin
+
 For files that can't be merged (Blueprints, textures, audio), the team uses Git LFS locking with a notification workflow:
 
 1. Developer checks `git lfs locks` before starting work
