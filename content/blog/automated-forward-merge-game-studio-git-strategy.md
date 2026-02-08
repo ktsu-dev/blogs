@@ -15,7 +15,7 @@ slug: "automated-forward-merge-game-studio-git-strategy"
 
 Merge debt is the silent killer of game development velocity. Feature branches that diverge from main for weeks accumulate conflicts that take hours or days to resolve at integration time. The longer you wait, the worse it gets.
 
-This post documents how The Three Thousands — a 20-person game studio working with Unreal Engine — eliminated merge debt entirely by automating forward-merges from main into every active feature branch, with immediate Slack notifications when conflicts arise.
+This post documents how a 20-person game studio working with Unreal Engine — eliminated merge debt entirely by automating forward-merges from main into every active feature branch, with immediate Slack notifications when conflicts arise.
 
 ## The Problem: Week-Long Merge Sessions
 
