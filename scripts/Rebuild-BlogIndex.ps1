@@ -231,6 +231,12 @@ $tagGroups = @{
     'Troubleshooting and Debugging' = @('debugging', 'troubleshooting')
     'Architecture and Design' = @('architecture', 'design-flaw', 'design-patterns', 'type-safety', 'strong-typing')
     'Development Tools' = @('git-worktrees', 'visual-studio')
+    'Performance and Optimization' = @('performance', 'memory-management', 'concurrency', 'threading')
+    'Game Development' = @('unreal-engine', 'game-development')
+    'DevOps and Automation' = @('devops', 'automation', 'git')
+    'Security' = @('security')
+    'Observability' = @('observability', 'distributed-systems')
+    'Team Practices' = @('team-management', 'case-study', 'conference-notes')
 }
 
 $readmeContent += "## Posts by Tags"
