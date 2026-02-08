@@ -229,7 +229,7 @@ $tagGroups = @{
     '.NET and C#' = @('dotnet', 'csharp', 'nuget', 'msbuild', 'visual-studio')
     'Build Systems and MSBuild' = @('msbuild', 'build-server', 'nuget', 'visual-studio')
     'Troubleshooting and Debugging' = @('debugging', 'troubleshooting')
-    'Architecture and Design' = @('architecture', 'design-flaw')
+    'Architecture and Design' = @('architecture', 'design-flaw', 'design-patterns', 'type-safety', 'strong-typing')
     'Development Tools' = @('git-worktrees', 'visual-studio')
 }
 
