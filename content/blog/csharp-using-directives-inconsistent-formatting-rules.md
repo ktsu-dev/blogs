@@ -2,7 +2,7 @@
 title: "C# Using Directives: IDE0055 Format Violations Don't Always Trigger as Expected"
 author: "Matt Edmondson"
 created: 2025-07-18
-modified: 2025-07-18
+modified: 2026-02-09
 status: published
 description: "A deep dive into C# IDE0055 formatting rule's unexpected behavior with using directives, explaining why some formatting issues don't trigger violations and how to handle this quirk."
 categories: ["Development", "C#"]
@@ -12,6 +12,8 @@ slug: "csharp-using-directives-inconsistent-formatting-rules"
 ---
 
 # C# Using Directives: IDE0055 Format Violations Don't Always Trigger as Expected
+
+> **Update (February 2026):** This issue has been **resolved**. The Roslyn team merged [PR #81202](https://github.com/dotnet/roslyn/pull/81202) on November 13, 2025, which fixes IDE0055 to enforce `dotnet_separate_import_directive_groups` based on **grouping (contiguity)** rather than **alphabetical sorting**. The fix shipped after the .NET 10.0 GA release (November 11, 2025) and is expected to be available in .NET 10 servicing updates (SDK 10.0.1xx+). See the [Resolution](#resolution) section below for details.
 
 When setting up code formatting rules in C# projects, many developers rely on analyzer rules like IDE0055 to enforce consistent code style. However, there's an undocumented quirk with how this rule handles using directive formatting that can lead to confusing results.
 
@@ -49,9 +51,9 @@ using NuGet.Versioning;
 
 Surprisingly, this code **won't trigger an IDE0055 violation**, even though the using directives still aren't separated into groups. The only difference is that these directives aren't alphabetically sorted.
 
-## Why This Happens
+## Why This Happens (Prior to the Fix)
 
-After investigating the Roslyn source code, I found the cause in the `TokenBasedFormattingRule.AdjustNewLinesAfterSemicolonToken()` method. The relevant code contains this conditional check:
+After investigating the Roslyn source code, I found the cause in the `TokenBasedFormattingRule.AdjustNewLinesAfterSemicolonToken()` method. The relevant code contained this conditional check:
 
 ```csharp
 if (usings.IsSorted(UsingsAndExternAliasesDirectiveComparer.SystemFirstInstance) ||
@@ -62,7 +64,7 @@ if (usings.IsSorted(UsingsAndExternAliasesDirectiveComparer.SystemFirstInstance)
 }
 ```
 
-This code reveals that the formatting rule intentionally checks if the using directives are already sorted before enforcing group separation. The comment above this code in the Roslyn source even hints at this behavior:
+This code revealed that the formatting rule intentionally checked if the using directives were already sorted before enforcing group separation. The comment above this code in the Roslyn source even hinted at this behavior:
 
 > "if the user is separating using-groups, and we're between two usings, and these usings *should* be separated, then do so (if the usings were already properly sorted)."
 
@@ -118,19 +120,21 @@ What makes this problem particularly tricky is that standard remediation approac
 
 ## Working Around the Issue
 
-Since typical remediation approaches don't work, here are some practical workarounds:
+> **Note:** If you are using a .NET SDK version that includes the fix (see [Resolution](#resolution) below), these workarounds are no longer necessary. Update your SDK to resolve this issue permanently.
 
-### 1. Manual Inspection
+For those still on older SDK versions where typical remediation approaches don't work, here are some practical workarounds:
 
-Until this issue is resolved, you may need to manually review codebases for this specific formatting issue or create custom tooling to check for it.
+### 1. Update Your .NET SDK
 
-### 2. Custom Roslyn Analyzer
+The simplest and most effective fix is to update to a .NET SDK version that includes the Roslyn fix from [PR #81202](https://github.com/dotnet/roslyn/pull/81202). The fix was merged to Roslyn's main branch on November 13, 2025, and should be available in .NET 10 servicing updates (SDK 10.0.1xx+).
+
+### 2. Manual Inspection
+
+If updating isn't an option, you may need to manually review codebases for this specific formatting issue or create custom tooling to check for it.
+
+### 3. Custom Roslyn Analyzer
 
 Consider creating a custom Roslyn analyzer that specifically checks for using directive grouping regardless of sorting order.
-
-### 3. Report and Track the Issue
-
-Follow and engage with the [GitHub issue](https://github.com/dotnet/roslyn/issues/77831) to encourage resolution in a future Roslyn release.
 
 ### 4. Documentation and Team Awareness
 
@@ -138,7 +142,7 @@ Make sure your team is aware of this quirk to avoid confusion when formatting is
 
 ### 5. Comprehensive EditorConfig
 
-While it won't fully solve the issue, having a comprehensive `.editorconfig` that enforces both sorting and grouping can minimize occurrences when used with manual or automated formatting tools:
+While it won't fully solve the issue on older SDKs, having a comprehensive `.editorconfig` that enforces both sorting and grouping can minimize occurrences when used with manual or automated formatting tools:
 
 ```ini
 # .editorconfig
@@ -151,11 +155,9 @@ dotnet_diagnostic.IDE0055.severity = error
 
 # Other related formatting options
 csharp_using_directive_placement = outside_namespace
-
-# Note: Sorting order must be applied manually or via tools; this config alone won't enforce grouping unless sorted
 ```
 
-Then use manual formatting or automated tools (like Code Cleanup) to ensure usings are properly sorted *before* the IDE0055 rule can effectively enforce grouping.
+Then use manual formatting or automated tools (like Code Cleanup) to ensure usings are properly sorted *before* the IDE0055 rule can effectively enforce grouping. With the fix applied, this `.editorconfig` configuration works as originally expected without requiring pre-sorted usings.
 
 ## Affected Tools and Automation
 
@@ -164,7 +166,7 @@ This issue doesn't just affect Visual Studio users—it impacts a wide range of 
 ### 1. CI/CD Pipeline Tools
 
 * **GitHub Actions workflows** that run `dotnet format` to validate pull requests
-* **Azure DevOps build pipelines** using tasks that check code formatting 
+* **Azure DevOps build pipelines** using tasks that check code formatting
 * **Jenkins jobs** with .NET code quality gates
 * **TeamCity build configurations** that fail on code style violations
 
@@ -210,27 +212,54 @@ The inconsistency of IDE0055's behavior means these tools can't reliably enforce
 
 ## Technical Explanation
 
-The issue occurs because the IDE0055 rule's implementation for `dotnet_separate_import_directive_groups` has a hidden dependency on the sorting state of the using directives.
+The issue occurred because the IDE0055 rule's implementation for `dotnet_separate_import_directive_groups` had a hidden dependency on the sorting state of the using directives.
 
-In the Roslyn codebase, the `UsingsAndExternAliasesOrganizer.NeedsGrouping()` method determines if two namespaces should belong to different groups based on their first token. However, the actual enforcement of group separation only happens if the using directives are already sorted either:
+In the Roslyn codebase, the `UsingsAndExternAliasesOrganizer.NeedsGrouping()` method determines if two namespaces should belong to different groups based on their first token. However, the actual enforcement of group separation only happened if the using directives were already sorted either:
 
 1. Alphabetically, or
 2. With `System` namespaces first, followed by other namespaces alphabetically
 
-This implementation detail contradicts the documented behavior of both `dotnet_separate_import_directive_groups` and `dotnet_sort_system_directives_first`.
+This implementation detail contradicted the documented behavior of both `dotnet_separate_import_directive_groups` and `dotnet_sort_system_directives_first`.
+
+## Resolution
+
+On November 13, 2025, the Roslyn team merged [PR #81202](https://github.com/dotnet/roslyn/pull/81202) which fixes this issue. The fix was reviewed and merged by Cyrus Najmabadi (a Roslyn team contributor) and approved by Joe Robich (a Roslyn team member).
+
+### What Changed
+
+The fix fundamentally changes how IDE0055 decides whether to enforce group separation:
+
+* **Before**: The rule checked if usings were **alphabetically sorted** (either fully sorted or sorted with `System` namespaces first). Only if they were sorted would it enforce group separation.
+* **After**: The rule checks if usings are **properly grouped** (contiguous). As long as all usings sharing the same first namespace token are together, group separators are enforced — regardless of alphabetical order.
+
+The old sorting check in `TokenBasedFormattingRule.cs`:
+
+```csharp
+if (usings.IsSorted(UsingsAndExternAliasesDirectiveComparer.SystemFirstInstance) ||
+    usings.IsSorted(UsingsAndExternAliasesDirectiveComparer.NormalInstance))
+```
+
+Was replaced with a new `AreUsingsProperlyGrouped()` method that checks **contiguity** — meaning it only verifies that all usings with the same first namespace token appear together, without requiring any particular order between groups.
+
+### What This Means in Practice
+
+With the fix applied, **Example 2 from above will now correctly trigger an IDE0055 violation**, because the `Azure`, `System`, and `NuGet` groups are contiguous even though they aren't alphabetically sorted. The only scenario where separators won't be added is when usings of the same namespace group are truly scattered (e.g., `Azure` usings at both the beginning and end of the list with other namespaces in between).
+
+### Availability
+
+The fix was merged to Roslyn's main branch on November 13, 2025, two days after the .NET 10.0 GA release (November 11, 2025). It is expected to be available in .NET 10 servicing SDK updates (10.0.1xx+). Users on .NET 9 or earlier will need to upgrade to a .NET 10+ SDK to benefit from this fix.
 
 ## Conclusion
 
-This undocumented behavior in IDE0055's handling of using directive formatting represents a gap between expected and actual functionality. While it might be intentional from the Roslyn team's perspective, the lack of documentation leads to confusion and inconsistent code formatting.
+This article documented an undocumented behavior in IDE0055's handling of using directive formatting that represented a gap between expected and actual functionality. The issue report led to a discussion with the Roslyn team, and the bug was ultimately fixed in [PR #81202](https://github.com/dotnet/roslyn/pull/81202), which shifted the logic from requiring alphabetical sorting to requiring contiguous grouping.
 
-For now, awareness of this quirk is the best defense against inconsistent using directive formatting. Hopefully, this issue will be addressed in future versions of the .NET SDK, either by changing the behavior or properly documenting the existing requirements.
+For teams still on older SDK versions, the workarounds described above remain relevant. For everyone else, updating to a .NET SDK that includes the fix is the recommended path forward.
 
-> **Note**: The behavior described in this article was verified with .NET SDK version 9.0.201 and Visual Studio 2022 (17.13.5). Future versions of the Roslyn compiler may change this behavior. Readers should re-verify behavior in newer SDK or IDE versions as updates may address or change this behavior.
-
-If you're interested in following the progress on this issue, you can track it on GitHub at [dotnet/roslyn issue #77831](https://github.com/dotnet/roslyn/issues/77831).
+> **Note**: The original behavior described in this article was verified with .NET SDK version 9.0.201 and Visual Studio 2022 (17.13.5). The fix was merged into Roslyn on November 13, 2025 and is expected in .NET 10 servicing SDK updates. Verify your SDK version includes the fix by testing with non-sorted but contiguous using directives.
 
 ## References
 
-- [My Issue Report: Undocumented requirement for import directives to be alphabetically sorted to trigger IDE0055](https://github.com/dotnet/roslyn/issues/77831)
-- [Microsoft Docs: .NET formatting options](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/dotnet-formatting-options)
-- [Roslyn GitHub Repository](https://github.com/dotnet/roslyn) 
+* [My Issue Report: Undocumented requirement for import directives to be alphabetically sorted to trigger IDE0055](https://github.com/dotnet/roslyn/issues/77831)
+* [Fix PR #81202: Enforce import directive grouping when groups are contiguous, regardless of sorting](https://github.com/dotnet/roslyn/pull/81202)
+* [Microsoft Docs: .NET formatting options](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/dotnet-formatting-options)
+* [Roslyn GitHub Repository](https://github.com/dotnet/roslyn)
