@@ -82,24 +82,24 @@ A deep dive into debugging a cryptic .NET restore error that reveals a fundament
 
 ## Posts by Tags
 
-### Development Tools
+### Troubleshooting and Debugging
 - [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 
-### Troubleshooting and Debugging
+### Development Tools
 - [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 
 ### Architecture and Design
 - [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 - [Eliminating Primitive Obsession in C# with Semantic Types](./content/blog/csharp-eliminating-primitive-obsession-with-semantic-types.md)
 
+### Build Systems and MSBuild
+- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
+
 ### .NET and C#
 - [C# Object Initializers Run After Code in the Default Constructor](./content/blog/csharp-object-initializers-run-after-code-in-the-default-constructor.md)
 - [C# Using Directives: IDE0055 Format Violations Don't Always Trigger as Expected](./content/blog/csharp-using-directives-inconsistent-formatting-rules.md)
 - [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 - [Eliminating Primitive Obsession in C# with Semantic Types](./content/blog/csharp-eliminating-primitive-obsession-with-semantic-types.md)
-
-### Build Systems and MSBuild
-- [Debugging the Mysterious 'Unable to find a project to restore' Error in .NET](./content/blog/dotnet-project-guid-conflicts-build-server-debugging.md)
 
 ## Blog Stats
 
