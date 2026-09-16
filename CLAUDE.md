@@ -20,7 +20,14 @@ pwsh scripts/Rebuild-BlogIndex.ps1
 
 # Or on Windows without pwsh in PATH
 scripts\rebuild-blog.bat
+
+# Check the index script against the defects it has had
+pwsh scripts/tests/Rebuild-BlogIndex.tests.ps1
 ```
+
+`rebuild-blog.bat` calls `powershell`, i.e. Windows PowerShell 5.1, so the script has to stay
+compatible with 5.1 as well as with `pwsh` 7+. That rules out 6+-only syntax such as the
+three-argument `Join-Path` and `Sort-Object -Stable`.
 
 ## Blog Post Format
 
@@ -66,3 +73,14 @@ README.md              # AUTO-GENERATED blog index — do not edit
 ### Tag Grouping
 
 The index script maps individual tags into display groups (defined in the `$tagGroups` hashtable in `Rebuild-BlogIndex.ps1`). When adding posts with new tags, update `$tagGroups` if the tags should appear in the "Posts by Tags" section.
+
+`$tagGroups` is an `[ordered]` hashtable, and that matters: the "Posts by Tags" sections are
+emitted in key order, so the declared order *is* the published order. A plain `@{}` enumerates its
+keys differently in each process, which made every run produce a different `README.md` — and since
+the workflow commits `README.md` whenever it differs, that became an auto-commit on every push.
+
+### Reproducible output
+
+The index has to be a pure function of the posts: same content in, byte-identical `README.md` out.
+Anything that orders a section needs a total order, which is why ties on `created` are broken by
+title — `Sort-Object` is not a stable sort and scrambles tied items once there are enough of them.
