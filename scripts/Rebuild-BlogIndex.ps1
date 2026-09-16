@@ -113,7 +113,10 @@ function Format-BlogDate {
 Write-Host "Rebuilding blog index..." -ForegroundColor Cyan
 
 # Find all markdown files in the content/blog directory except README.md
-$blogPosts = Get-ChildItem -Path (Join-Path $Path "content\blog") -Filter "*.md" -File | 
+# Join-Path is nested rather than given a "content\blog" child segment: a separator embedded in a
+# single argument is not portable, and the three-argument form that would replace it needs
+# PowerShell 6+, which rebuild-blog.bat (Windows PowerShell 5.1) does not have.
+$blogPosts = Get-ChildItem -Path (Join-Path (Join-Path $Path "content") "blog") -Filter "*.md" -File |
     Where-Object { $_.Name -ne "README.md" }
 
 Write-Host "Found $($blogPosts.Count) blog post(s)" -ForegroundColor Green
@@ -138,11 +141,17 @@ if ($posts.Count -eq 0) {
 
 Write-Host "Found $($posts.Count) published blog post(s)" -ForegroundColor Green
 
-# Sort posts by date (newest first)
-$sortedPosts = $posts | Sort-Object { 
-    try { [DateTime]::Parse($_.created) } 
-    catch { [DateTime]::MinValue } 
-} -Descending
+# Sort posts by date (newest first), breaking ties on title.
+# Sort-Object is not a stable sort, so posts sharing a created date are not guaranteed to keep
+# their input order. The tiebreaker is what makes the result reproducible: the workflow commits
+# README.md whenever it differs, so an unordered tie becomes a spurious commit on every push.
+$sortedPosts = $posts | Sort-Object -Property @{
+    Expression = { try { [DateTime]::Parse($_.created) } catch { [DateTime]::MinValue } }
+    Descending = $true
+}, @{
+    Expression = { [string]$_.title }
+    Descending = $false
+}
 
 # Generate README content
 $readmeContent = @()
@@ -224,8 +233,11 @@ foreach ($post in $posts) {
     }
 }
 
-# Group tags by category for better organization
-$tagGroups = @{
+# Group tags by category for better organization.
+# [ordered] is load-bearing, not decoration: the "Posts by Tags" sections are emitted in key order,
+# and a plain hashtable enumerates its keys in an order that varies between processes. That made
+# every run produce a different README.md, and the workflow commits README.md whenever it differs.
+$tagGroups = [ordered]@{
     '.NET and C#' = @('dotnet', 'csharp', 'nuget', 'msbuild', 'visual-studio')
     'Build Systems and MSBuild' = @('msbuild', 'build-server', 'nuget', 'visual-studio')
     'Troubleshooting and Debugging' = @('debugging', 'troubleshooting')

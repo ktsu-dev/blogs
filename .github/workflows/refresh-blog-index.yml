@@ -13,12 +13,37 @@ on:
       - '**.ps1'
       - '**.yml'
       - '!README.md'
+  # No paths filter on pull_request, deliberately. The test job is only a guard if it runs before a
+  # change to the script reaches main, and a filtered trigger would skip it on the PRs that need it.
+  pull_request:
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
+  # CLAUDE.md documents `pwsh scripts/Rebuild-BlogIndex.ps1` as the primary command, so the script
+  # has to keep working off Windows. update-index alone cannot check that, because it is pinned to
+  # windows-latest — a cross-platform claim needs a non-Windows runner to verify it.
+  test:
+    name: Test Index Script (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run Script Tests
+        shell: pwsh
+        run: ./scripts/tests/Rebuild-BlogIndex.tests.ps1
+
+  # Regenerating and committing README.md only makes sense on main. On a pull_request run the test
+  # job above is the whole point, and this job would be pushing to the wrong place.
   update-index:
     runs-on: windows-latest
     name: Update Blog Index
+    needs: test
+    if: github.event_name != 'pull_request'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
