@@ -251,6 +251,56 @@ Assert-Case -Name 'drafts and reviews stay out of the index' -Body {
     }
 }
 
+# ktsu-dev/blogs#6: month names, and the order of categories and titles, came from the current
+# culture, and Set-Content -Encoding UTF8 writes a byte order mark under Windows PowerShell 5.1 only.
+# A German machine wrote "Juli 18, 2025", which the workflow then committed back to English. de-DE
+# catches the month names. lt-LT catches the sort: it orders y between i and k, so a culture-
+# sensitive sort puts "Yarn" before "Java".
+Assert-Case -Name 'the index is the same bytes, with no BOM, whatever the current culture' -Body {
+    $root = New-Fixture -Posts @(
+        (New-Post -Slug 'alpha' -Title 'Yak' -Created '2025-07-18' -Category 'Yarn')
+        (New-Post -Slug 'bravo' -Title 'Jay' -Created '2025-07-18' -Category 'Java')
+        (New-Post -Slug 'charlie' -Title 'Kite' -Created '2025-02-08' -Category 'Kotlin')
+    )
+    try {
+        $readmePath = Join-Path $root 'README.md'
+        $renders = foreach ($culture in @('', 'de-DE', 'lt-LT')) {
+            $command = "[System.Globalization.CultureInfo]::CurrentCulture = [System.Globalization.CultureInfo]::new('$culture'); & '$($script:Script)' -Path '$root'"
+            & $script:Pwsh -NoProfile -Command $command *>$null
+            if ($LASTEXITCODE -ne 0) {
+                return "the run under culture '$culture' exited with $LASTEXITCODE"
+            }
+            $bytes = [System.IO.File]::ReadAllBytes($readmePath)
+            if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+                return "the run under culture '$culture' wrote a byte order mark"
+            }
+            [pscustomobject]@{ Culture = $culture; Text = [System.Text.Encoding]::UTF8.GetString($bytes) }
+        }
+
+        $invariant = $renders[0].Text
+        foreach ($expected in @('**Published:** July 18, 2025', '**Published:** February 8, 2025')) {
+            if (-not $invariant.Contains($expected)) {
+                return "the invariant run is missing [$expected]"
+            }
+        }
+        $categoryOrder = @($invariant -split "`n" | Where-Object { $_ -match '^### (Java|Kotlin|Yarn)$' })
+        if (($categoryOrder -join ',') -ne '### Java,### Kotlin,### Yarn') {
+            return "categories came out as [$($categoryOrder -join ', ')]"
+        }
+        foreach ($render in $renders | Select-Object -Skip 1) {
+            if ($render.Text -cne $invariant) {
+                $changed = @(Compare-Object ($invariant -split "`n") ($render.Text -split "`n") |
+                    ForEach-Object { "$($_.SideIndicator) $($_.InputObject)" })
+                return "the $($render.Culture) run differs from the invariant run:`n      $($changed -join "`n      ")"
+            }
+        }
+        return $null
+    }
+    finally {
+        Remove-Item -LiteralPath $root -Recurse -Force
+    }
+}
+
 # ktsu-dev/blogs#5: the frontmatter template in CLAUDE.md carries an inline comment on status:, and
 # the parser kept it as part of the value, so a post copied from the template was skipped as not
 # published. The first post is that template verbatim. The second puts comments on title: and

@@ -125,6 +125,59 @@ function Get-BlogPostMetadata {
     }
 }
 
+# Everything that reaches README.md is culture-invariant, because the index has to be the same bytes
+# whoever runs the script: the workflow on windows-latest, rebuild-blog.bat under Windows PowerShell
+# 5.1, or pwsh on a de-DE machine. Left to the current culture, a German run wrote "Juli 18, 2025",
+# and the workflow then committed the README back to English.
+$script:Invariant = [System.Globalization.CultureInfo]::InvariantCulture
+
+function ConvertTo-BlogDate {
+    param([string]$DateString)
+
+    return [DateTime]::Parse($DateString, $script:Invariant)
+}
+
+# A total order on text: invariant and case-insensitive first, which is how the index has always
+# been ordered, then ordinal so that values differing only in case still come out the same way on
+# every run. Sort-Object can't give this: it sorts with the current culture, and -Culture "" (the
+# invariant culture's name) falls back to the current culture too.
+function Compare-InvariantText {
+    param([string]$Left, [string]$Right)
+
+    $result = [StringComparer]::InvariantCultureIgnoreCase.Compare($Left, $Right)
+    if ($result -eq 0) {
+        $result = [string]::CompareOrdinal($Left, $Right)
+    }
+    return $result
+}
+
+# Sorts by the text $Key gives for each item, in Compare-InvariantText order. -Unique keeps the first
+# of each run of keys that are equal ignoring case, as Sort-Object -Unique did.
+function Sort-InvariantText {
+    param([object[]]$Items, [scriptblock]$Key = { param($item) $item }, [switch]$Unique)
+
+    $list = New-Object 'System.Collections.Generic.List[object]'
+    foreach ($item in $Items) {
+        $list.Add($item)
+    }
+    $list.Sort([System.Comparison[object]] {
+            param($x, $y)
+            Compare-InvariantText -Left ([string](& $Key $x)) -Right ([string](& $Key $y))
+        })
+
+    $sorted = @()
+    $lastKey = $null
+    foreach ($item in $list) {
+        $itemKey = [string](& $Key $item)
+        if ($Unique -and $null -ne $lastKey -and [StringComparer]::InvariantCultureIgnoreCase.Equals($itemKey, $lastKey)) {
+            continue
+        }
+        $sorted += , $item
+        $lastKey = $itemKey
+    }
+    return , $sorted
+}
+
 # Function to format date for display
 function Format-BlogDate {
     param([string]$DateString)
@@ -134,8 +187,8 @@ function Format-BlogDate {
     }
     
     try {
-        $date = [DateTime]::Parse($DateString)
-        return $date.ToString("MMMM d, yyyy")
+        $date = ConvertTo-BlogDate -DateString $DateString
+        return $date.ToString("MMMM d, yyyy", $script:Invariant)
     }
     catch {
         return $DateString
@@ -178,13 +231,15 @@ Write-Host "Found $($posts.Count) published blog post(s)" -ForegroundColor Green
 # Sort-Object is not a stable sort, so posts sharing a created date are not guaranteed to keep
 # their input order. The tiebreaker is what makes the result reproducible: the workflow commits
 # README.md whenever it differs, so an unordered tie becomes a spurious commit on every push.
-$sortedPosts = $posts | Sort-Object -Property @{
-    Expression = { try { [DateTime]::Parse($_.created) } catch { [DateTime]::MinValue } }
-    Descending = $true
-}, @{
-    Expression = { [string]$_.title }
-    Descending = $false
+# Titles aren't compared by Sort-Object, which would use the current culture. They are put in
+# invariant order first, and that position is then the tiebreaker for the sort by date.
+$byTitle = Sort-InvariantText -Items $posts -Key { param($post) $post.title }
+$dated = for ($i = 0; $i -lt $byTitle.Count; $i++) {
+    $created = try { ConvertTo-BlogDate -DateString $byTitle[$i].created } catch { [DateTime]::MinValue }
+    [pscustomobject]@{ Post = $byTitle[$i]; Created = $created; Index = $i }
 }
+$sortedPosts = @($dated | Sort-Object -Property @{ Expression = { $_.Created }; Descending = $true }, Index |
+    ForEach-Object { $_.Post })
 
 # Generate README content
 $readmeContent = @()
@@ -244,7 +299,7 @@ foreach ($post in $posts) {
 $readmeContent += "## Posts by Category"
 $readmeContent += ""
 
-foreach ($category in ($categories.Keys | Sort-Object)) {
+foreach ($category in (Sort-InvariantText -Items @($categories.Keys))) {
     $readmeContent += "### $category"
     foreach ($post in $categories[$category]) {
         $readmeContent += "- [$($post.title)]($($post.RelativePath))"
@@ -299,7 +354,7 @@ foreach ($groupName in $tagGroups.Keys) {
     
     if ($groupPosts.Count -gt 0) {
         $readmeContent += "### $groupName"
-        $uniquePosts = $groupPosts | Sort-Object -Property title -Unique
+        $uniquePosts = Sort-InvariantText -Items $groupPosts -Key { param($post) $post.title } -Unique
         foreach ($post in $uniquePosts) {
             $readmeContent += "- [$($post.title)]($($post.RelativePath))"
         }
@@ -314,7 +369,7 @@ foreach ($post in $posts) {
         $allCategories += if ($post.categories -is [array]) { $post.categories } else { @($post.categories) }
     }
 }
-$uniqueCategories = $allCategories | Sort-Object -Unique
+$uniqueCategories = Sort-InvariantText -Items $allCategories -Unique
 $latestPost = $sortedPosts | Select-Object -First 1
 
 $readmeContent += "## Blog Stats"
@@ -358,8 +413,12 @@ $readmeContent += ""
 $readmeContent += "*This blog is maintained as a Git repository to track changes, encourage collaboration, and provide version history for all content.*"
 
 # Write README.md
+# Written through .NET rather than Set-Content: -Encoding UTF8 writes a byte order mark under Windows
+# PowerShell 5.1 and none under pwsh 7, and Set-Content ends the file with the platform's newline.
+# .NET needs a full path, because its current directory isn't PowerShell's current location.
 $readmePath = Join-Path -Path $Path -ChildPath "README.md"
-$readmeContent -join "`n" | Set-Content -Path $readmePath -Encoding UTF8
+$readmeFullPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($readmePath)
+[System.IO.File]::WriteAllText($readmeFullPath, ($readmeContent -join "`n") + "`n", (New-Object System.Text.UTF8Encoding $false))
 
 Write-Host "Blog index rebuilt successfully!" -ForegroundColor Green
 Write-Host "Generated index for $($posts.Count) blog post(s)" -ForegroundColor Green
