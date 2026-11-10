@@ -251,6 +251,52 @@ Assert-Case -Name 'drafts and reviews stay out of the index' -Body {
     }
 }
 
+# ktsu-dev/blogs#4: rebuild-blog.bat runs the script without -Path, and a double-click starts it
+# with the current directory set to scripts\. The default used to be the current directory, so it
+# looked for scripts/content/blog, found nothing and exited 1. Every other case passes -Path, so
+# this one copies the script into a fixture's scripts/ folder and runs it from three places.
+Assert-Case -Name 'without -Path the repository the script lives in is indexed, from any directory' -Body {
+    $root = New-Fixture -Posts @(
+        (New-Post -Slug 'alpha' -Title 'Alpha' -Created '2025-01-01')
+    )
+    $elsewhere = Join-Path ([System.IO.Path]::GetTempPath()) "blog-index-elsewhere-$([guid]::NewGuid())"
+    New-Item -ItemType Directory -Path $elsewhere -Force | Out-Null
+    try {
+        $scripts = Join-Path $root 'scripts'
+        New-Item -ItemType Directory -Path $scripts -Force | Out-Null
+        $copy = Join-Path $scripts 'Rebuild-BlogIndex.ps1'
+        Copy-Item -LiteralPath $script:Script -Destination $copy
+        $readmePath = Join-Path $root 'README.md'
+
+        foreach ($cwd in @($scripts, $root, $elsewhere)) {
+            if (Test-Path -LiteralPath $readmePath) {
+                Remove-Item -LiteralPath $readmePath
+            }
+            Push-Location -LiteralPath $cwd
+            try {
+                & $script:Pwsh -NoProfile -File $copy *>$null
+            }
+            finally {
+                Pop-Location
+            }
+            if ($LASTEXITCODE -ne 0) {
+                return "run from $cwd exited with $LASTEXITCODE"
+            }
+            if (-not (Test-Path -LiteralPath $readmePath)) {
+                return "run from $cwd did not write the repository's README.md"
+            }
+            if ((Get-Content -LiteralPath $readmePath -Raw) -notmatch '\[Alpha\]\(\./content/blog/') {
+                return "run from $cwd did not index the repository's posts"
+            }
+        }
+        return $null
+    }
+    finally {
+        Remove-Item -LiteralPath $root -Recurse -Force
+        Remove-Item -LiteralPath $elsewhere -Recurse -Force
+    }
+}
+
 Write-Host ''
 if ($script:Failures -gt 0) {
     Write-Host "$script:Failures of $script:Count case(s) failed." -ForegroundColor Red
