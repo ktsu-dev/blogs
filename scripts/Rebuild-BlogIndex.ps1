@@ -25,8 +25,15 @@
 [CmdletBinding()]
 param(
     [Parameter()]
-    [string]$Path = (Get-Location).Path
+    [string]$Path
 )
+
+# The default is the repository root, found from the script's own location rather than the current
+# directory. rebuild-blog.bat is meant to be double-clicked, which starts it with the current
+# directory set to scripts\, so a current-directory default found no posts and exited 1.
+if (-not $Path) {
+    $Path = Split-Path -Parent $PSScriptRoot
+}
 
 # Removes a trailing YAML comment from a frontmatter value. A comment starts at a # that is outside
 # quotes and either begins the value or follows white space, so C# and "Why # matters" keep their #.
