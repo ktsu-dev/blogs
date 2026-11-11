@@ -301,6 +301,77 @@ Assert-Case -Name 'the index is the same bytes, with no BOM, whatever the curren
     }
 }
 
+# ktsu-dev/blogs#5: the frontmatter template in CLAUDE.md carries an inline comment on status:, and
+# the parser kept it as part of the value, so a post copied from the template was skipped as not
+# published. The first post is that template verbatim. The second puts comments on title: and
+# created: too, beside # characters that are part of the value and must survive.
+Assert-Case -Name 'inline # comments in frontmatter are not part of the value' -Body {
+    $root = New-Fixture -Posts @()
+    $blog = Join-Path (Join-Path $root 'content') 'blog'
+    $template = @(
+        '---'
+        'title: "Post Title"'
+        'author: "Matt Edmondson"'
+        'created: 2025-07-18'
+        'modified: 2025-07-18'
+        'status: published          # draft | review | published'
+        'description: "One-line summary used in the index"'
+        'categories: ["Development", "C#"]'
+        'tags: ["csharp", "topic-tag"]'
+        'keywords: ["SEO keyword phrases"]'
+        'slug: "url-friendly-post-name"'
+        '---'
+        ''
+        'Body text.'
+    ) -join "`n"
+    $commented = @(
+        '---'
+        'title: "Why # Matters"   # the # inside the quotes is part of the title'
+        'author: "Test Author"'
+        'created: 2025-06-01      # first draft'
+        'status: published # ready'
+        "description: Matt's notes on C# # not part of the description"
+        'categories: ["Development", "C#"] # flow sequence'
+        'tags: ["csharp"]'
+        'slug: "commented"'
+        '---'
+        ''
+        'Body text.'
+    ) -join "`n"
+    Set-Content -LiteralPath (Join-Path $blog 'url-friendly-post-name.md') -Value $template
+    Set-Content -LiteralPath (Join-Path $blog 'commented.md') -Value $commented
+    try {
+        $readme = Invoke-Index -Root $root
+        $expected = @(
+            '### [Post Title](./content/blog/url-friendly-post-name.md)'
+            '**Published:** July 18, 2025'
+            '### [Why # Matters](./content/blog/commented.md)'
+            '**Published:** June 1, 2025'
+            "Matt's notes on C#`n"
+            '**Categories:** Development, C#'
+        )
+        foreach ($line in $expected) {
+            if (-not $readme.Contains($line)) {
+                return "the index is missing [$line]"
+            }
+        }
+        if ($readme -notmatch '\*\*Total Posts:\*\* 2') {
+            return 'the index did not report 2 posts'
+        }
+        if ($readme.Contains('draft | review') -or $readme.Contains('first draft') -or $readme.Contains('not part of')) {
+            return 'a comment reached the index'
+        }
+        $statuses = @($readme -split "`n" | Where-Object { $_.StartsWith('**Status:**') })
+        if (@($statuses | Where-Object { $_ -ne '**Status:** published' }).Count -gt 0) {
+            return "unexpected status lines: [$($statuses -join ', ')]"
+        }
+        return $null
+    }
+    finally {
+        Remove-Item -LiteralPath $root -Recurse -Force
+    }
+}
+
 Write-Host ''
 if ($script:Failures -gt 0) {
     Write-Host "$script:Failures of $script:Count case(s) failed." -ForegroundColor Red

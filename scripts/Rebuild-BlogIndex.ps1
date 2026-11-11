@@ -28,6 +28,39 @@ param(
     [string]$Path = (Get-Location).Path
 )
 
+# Removes a trailing YAML comment from a frontmatter value. A comment starts at a # that is outside
+# quotes and either begins the value or follows white space, so C# and "Why # matters" keep their #.
+# As in YAML, a quote only opens a quoted scalar at the start of the value or of a flow-sequence
+# item, so the apostrophe in an unquoted "Matt's post # note" doesn't hide the comment after it.
+# Without this, the CLAUDE.md template's `status: published          # draft | review | published`
+# read as a status other than "published", and the post silently never reached the index.
+function Remove-YamlComment {
+    param([string]$Value)
+
+    $quote = [char]0
+    $previous = [char]0   # the last non-white-space character outside quotes; 0 at the start
+    for ($i = 0; $i -lt $Value.Length; $i++) {
+        $c = $Value[$i]
+        if ($quote -ne [char]0) {
+            if ($c -eq $quote) {
+                $quote = [char]0
+                $previous = $c
+            }
+            continue
+        }
+        if ($c -eq '#' -and ($i -eq 0 -or [char]::IsWhiteSpace($Value[$i - 1]))) {
+            return $Value.Substring(0, $i).TrimEnd()
+        }
+        if (($c -eq '"' -or $c -eq "'") -and ($previous -eq [char]0 -or $previous -eq '[' -or $previous -eq ',')) {
+            $quote = $c
+        }
+        elseif (-not [char]::IsWhiteSpace($c)) {
+            $previous = $c
+        }
+    }
+    return $Value
+}
+
 # Function to parse YAML frontmatter from markdown files
 function Get-BlogPostMetadata {
     param(
@@ -60,7 +93,7 @@ function Get-BlogPostMetadata {
             if ($line -and -not $line.StartsWith('#')) {
                 if ($line -match '^([^:]+):\s*(.*)$') {
                     $key = $matches[1].Trim()
-                    $value = $matches[2].Trim()
+                    $value = Remove-YamlComment -Value $matches[2].Trim()
                     
                     # Remove quotes if present
                     if ($value -match '^"(.*)"$' -or $value -match "^'(.*)'$") {
