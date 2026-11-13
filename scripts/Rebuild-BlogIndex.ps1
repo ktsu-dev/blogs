@@ -68,6 +68,66 @@ function Remove-YamlComment {
     return $Value
 }
 
+# Reads one YAML scalar: a "double-quoted" value has its \" and \\ escapes decoded, a 'single-quoted'
+# one has '' read as ', and an unquoted one is returned as it is. Other escapes, such as \n, are left
+# as written rather than guessed at; nothing in a title or description needs them.
+function ConvertFrom-YamlScalar {
+    param([string]$Text)
+
+    $Text = $Text.Trim()
+    if ($Text.Length -ge 2 -and $Text[0] -eq '"' -and $Text[$Text.Length - 1] -eq '"') {
+        $inner = $Text.Substring(1, $Text.Length - 2)
+        return [regex]::Replace($inner, '\\(["\\])', { param($m) $m.Groups[1].Value })
+    }
+    if ($Text.Length -ge 2 -and $Text[0] -eq "'" -and $Text[$Text.Length - 1] -eq "'") {
+        return $Text.Substring(1, $Text.Length - 2).Replace("''", "'")
+    }
+    return $Text
+}
+
+# Splits the inside of a flow sequence, [a, "b, c", 'd'], at the commas that are outside quotes,
+# so "Dev, Ops" stays one item. The items keep their quotes for ConvertFrom-YamlScalar. As in
+# Remove-YamlComment, a quote only opens a quoted item at the start of the item.
+function Split-YamlFlowSequence {
+    param([string]$Content)
+
+    $items = New-Object 'System.Collections.Generic.List[string]'
+    $current = New-Object System.Text.StringBuilder
+    $quote = [char]0
+    for ($i = 0; $i -lt $Content.Length; $i++) {
+        $c = $Content[$i]
+        if ($quote -ne [char]0) {
+            [void]$current.Append($c)
+            if ($quote -eq '"' -and $c -eq '\' -and $i + 1 -lt $Content.Length) {
+                $i++
+                [void]$current.Append($Content[$i])
+            }
+            elseif ($c -eq $quote) {
+                if ($quote -eq "'" -and $i + 1 -lt $Content.Length -and $Content[$i + 1] -eq "'") {
+                    $i++
+                    [void]$current.Append($Content[$i])
+                }
+                else {
+                    $quote = [char]0
+                }
+            }
+            continue
+        }
+        if ($c -eq ',') {
+            $items.Add($current.ToString())
+            [void]$current.Clear()
+            continue
+        }
+        if (($c -eq '"' -or $c -eq "'") -and $current.ToString().Trim().Length -eq 0) {
+            $quote = $c
+        }
+        [void]$current.Append($c)
+    }
+    $items.Add($current.ToString())
+
+    return @($items | Where-Object { $_.Trim().Length -gt 0 })
+}
+
 # Function to parse YAML frontmatter from markdown files
 function Get-BlogPostMetadata {
     param(
@@ -115,15 +175,14 @@ function Get-BlogPostMetadata {
                     $key = $matches[1].Trim()
                     $value = Remove-YamlComment -Value $matches[2].Trim()
                     
-                    # Remove quotes if present
-                    if ($value -match '^"(.*)"$' -or $value -match "^'(.*)'$") {
-                        $value = $matches[1]
-                    }
-                    
-                    # Handle arrays (simple bracket notation)
+                    # Only an unquoted value in brackets is a sequence. Quotes used to be stripped
+                    # first, so title: "[Video] Async [Part 1]" was taken for a sequence and lost
+                    # its brackets and commas.
                     if ($value -match '^\[(.*)\]$') {
-                        $arrayContent = $matches[1]
-                        $value = $arrayContent -split ',' | ForEach-Object { $_.Trim() -replace '^["'']', '' -replace '["'']$', '' }
+                        $value = @(Split-YamlFlowSequence -Content $matches[1] | ForEach-Object { ConvertFrom-YamlScalar -Text $_ })
+                    }
+                    else {
+                        $value = ConvertFrom-YamlScalar -Text $value
                     }
                     
                     $metadata[$key] = $value
