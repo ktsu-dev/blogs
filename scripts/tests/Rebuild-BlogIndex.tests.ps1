@@ -418,6 +418,70 @@ Assert-Case -Name 'without -Path the repository the script lives in is indexed, 
     }
 }
 
+# ktsu-dev/blogs#12: quotes were stripped before the sequence check, so a quoted title in brackets
+# was read as a sequence and lost its brackets and commas. Sequence items were split on every comma,
+# so the category "Dev, Ops" became two categories, and quote escapes were never decoded.
+Assert-Case -Name 'quoted values keep their brackets, commas and escaped quotes' -Body {
+    $root = New-Fixture -Posts @()
+    $blog = Join-Path (Join-Path $root 'content') 'blog'
+    $bracketed = @(
+        '---'
+        'title: "[Video] Async, Await and You [Part 1]"'
+        'author: "Test Author"'
+        'created: 2025-03-01'
+        'status: published'
+        'description: "He said \"hello\" and left a \\ behind"'
+        'categories: ["Dev, Ops", ''C#'', Plain]'
+        'tags: ["csharp"]'
+        'slug: "bracketed"'
+        '---'
+        ''
+        'Body text.'
+    ) -join "`n"
+    $escaped = @(
+        '---'
+        "title: 'Matt''s Guide to `"Things`"'"
+        'author: "Test Author"'
+        'created: 2025-02-01'
+        'status: published'
+        "description: '[Not] a sequence, either'"
+        "categories: ['It''s, quoted']"
+        'tags: ["csharp"]'
+        'slug: "escaped"'
+        '---'
+        ''
+        'Body text.'
+    ) -join "`n"
+    Set-Content -LiteralPath (Join-Path $blog 'bracketed.md') -Value $bracketed
+    Set-Content -LiteralPath (Join-Path $blog 'escaped.md') -Value $escaped
+    try {
+        $readme = Invoke-Index -Root $root
+        $expected = @(
+            '### [[Video] Async, Await and You [Part 1]](./content/blog/bracketed.md)'
+            'He said "hello" and left a \ behind'
+            '**Categories:** Dev, Ops, C#, Plain'
+            '### Dev, Ops'
+            '### [Matt''s Guide to "Things"](./content/blog/escaped.md)'
+            '[Not] a sequence, either'
+            '### It''s, quoted'
+        )
+        foreach ($line in $expected) {
+            if (-not $readme.Contains($line)) {
+                return "the index is missing [$line]"
+            }
+        }
+        $categories = @($readme -split "`n" | Where-Object { $_ -match '^### [^\[]' } |
+            Where-Object { $_ -in @('### Dev', '### Ops', '### It''s', '### quoted') })
+        if ($categories.Count -gt 0) {
+            return "a quoted category was split: [$($categories -join ', ')]"
+        }
+        return $null
+    }
+    finally {
+        Remove-Item -LiteralPath $root -Recurse -Force
+    }
+}
+
 # ktsu-dev/blogs#13: a created value with Z or an offset was converted to the machine's local time,
 # so the published date, and the newest-first order, depended on the time zone of whoever ran the
 # script. Each run sets TZ for its own child process, which .NET reads on Linux and macOS. Windows
