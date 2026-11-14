@@ -482,6 +482,57 @@ Assert-Case -Name 'quoted values keep their brackets, commas and escaped quotes'
     }
 }
 
+# ktsu-dev/blogs#13: a created value with Z or an offset was converted to the machine's local time,
+# so the published date, and the newest-first order, depended on the time zone of whoever ran the
+# script. Each run sets TZ for its own child process, which .NET reads on Linux and macOS. Windows
+# takes the zone from the system instead, so there the runs agree whatever the fix and the case
+# only checks the dates.
+Assert-Case -Name 'dates with Z or an offset are used as written, whatever the time zone' -Body {
+    $root = New-Fixture -Posts @(
+        (New-Post -Slug 'utc' -Title 'Utc' -Created '2025-07-18T02:00:00Z')
+        (New-Post -Slug 'ahead' -Title 'Ahead' -Created '2025-07-18T23:30:00+10:00')
+        (New-Post -Slug 'behind' -Title 'Behind' -Created '2025-07-17T22:00:00-08:00')
+    )
+    $savedTz = $env:TZ
+    try {
+        $renders = foreach ($tz in @('UTC', 'America/Los_Angeles', 'Australia/Melbourne')) {
+            $env:TZ = $tz
+            [pscustomobject]@{ Zone = $tz; Text = Invoke-Index -Root $root }
+        }
+
+        $first = $renders[0].Text
+        $expected = @(
+            "### [Ahead](./content/blog/ahead.md)`n`n**Published:** July 18, 2025"
+            "### [Utc](./content/blog/utc.md)`n`n**Published:** July 18, 2025"
+            "### [Behind](./content/blog/behind.md)`n`n**Published:** July 17, 2025"
+        )
+        foreach ($text in $expected) {
+            if (-not $first.Contains($text)) {
+                return "the $($renders[0].Zone) run is missing [$($text -replace "`n", ' / ')]"
+            }
+        }
+        $order = @($first -split "`n" |
+            Select-String -Pattern '^### \[(Ahead|Utc|Behind)\]' |
+            ForEach-Object { $_.Matches[0].Groups[1].Value } |
+            Select-Object -First 3)
+        if (($order -join ',') -ne 'Ahead,Utc,Behind') {
+            return "newest first came out as [$($order -join ', ')]"
+        }
+        foreach ($render in $renders | Select-Object -Skip 1) {
+            if ($render.Text -cne $first) {
+                $changed = @(Compare-Object ($first -split "`n") ($render.Text -split "`n") |
+                    ForEach-Object { "$($_.SideIndicator) $($_.InputObject)" })
+                return "the $($render.Zone) run differs from the $($renders[0].Zone) run:`n      $($changed -join "`n      ")"
+            }
+        }
+        return $null
+    }
+    finally {
+        $env:TZ = $savedTz
+        Remove-Item -LiteralPath $root -Recurse -Force
+    }
+}
+
 Write-Host ''
 if ($script:Failures -gt 0) {
     Write-Host "$script:Failures of $script:Count case(s) failed." -ForegroundColor Red

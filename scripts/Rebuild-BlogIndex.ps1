@@ -197,10 +197,15 @@ function Get-BlogPostMetadata {
 # and the workflow then committed the README back to English.
 $script:Invariant = [System.Globalization.CultureInfo]::InvariantCulture
 
+# A date is used as written. DateTime.Parse converted a value carrying Z or an offset to the
+# machine's local time, so 2025-07-18T02:00:00Z published as July 17 in Los Angeles and July 18 in
+# UTC, and the README differed with the time zone of whoever ran the script. A DateTimeOffset keeps
+# the clock time the post states, and .DateTime is that clock time with the offset dropped. A bare
+# yyyy-MM-dd has no offset to drop and reads the same as before.
 function ConvertTo-BlogDate {
     param([string]$DateString)
 
-    return [DateTime]::Parse($DateString, $script:Invariant)
+    return [DateTimeOffset]::Parse($DateString, $script:Invariant).DateTime
 }
 
 # A total order on text: invariant and case-insensitive first, which is how the index has always
