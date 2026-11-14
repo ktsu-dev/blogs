@@ -138,20 +138,33 @@ function Get-BlogPostMetadata {
     try {
         $content = Get-Content -Path $FilePath -Raw
         
-        # Check if file starts with YAML frontmatter
-        if (-not $content.StartsWith('---')) {
+        # The frontmatter opens and closes with a line that is exactly --- (trailing white space and
+        # the \r of a CRLF line allowed). Searching for the first --- after the opening one found a
+        # --- inside a value, such as title: "Before --- after", and cut the frontmatter there, so
+        # the fields after it, status among them, were lost and a published post was skipped.
+        $lines = $content -split "`n"
+        if ($lines.Count -eq 0 -or $lines[0] -notmatch '^---\s*$') {
             Write-Warning "File $FilePath does not contain YAML frontmatter"
             return $null
         }
-        
-        # Extract frontmatter between --- delimiters
-        $frontmatterEnd = $content.IndexOf('---', 3)
+
+        $frontmatterEnd = -1
+        for ($i = 1; $i -lt $lines.Count; $i++) {
+            if ($lines[$i] -match '^---\s*$') {
+                $frontmatterEnd = $i
+                break
+            }
+        }
         if ($frontmatterEnd -eq -1) {
             Write-Warning "File $FilePath has malformed YAML frontmatter"
             return $null
         }
-        
-        $yamlContent = $content.Substring(3, $frontmatterEnd - 3).Trim()
+
+        # 1..0 would count down and take the opening line, so an empty frontmatter is its own case.
+        $yamlContent = ''
+        if ($frontmatterEnd -gt 1) {
+            $yamlContent = ($lines[1..($frontmatterEnd - 1)] -join "`n").Trim()
+        }
         
         # Parse YAML manually (simple key-value parser)
         $metadata = @{}

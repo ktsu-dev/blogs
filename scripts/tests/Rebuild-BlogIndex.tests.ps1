@@ -533,6 +533,72 @@ Assert-Case -Name 'dates with Z or an offset are used as written, whatever the t
     }
 }
 
+# ktsu-dev/blogs#11: the end of the frontmatter was the first --- anywhere after the opening one,
+# so a --- inside a value cut the frontmatter short. The fields after it were lost, status among
+# them, and the published post was skipped. The closing delimiter has to be a line of its own. The
+# second post uses CRLF line endings with trailing white space on its delimiters, which still count.
+Assert-Case -Name 'a --- inside a frontmatter value does not end the frontmatter' -Body {
+    $root = New-Fixture -Posts @()
+    $blog = Join-Path (Join-Path $root 'content') 'blog'
+    $dashes = @(
+        '---'
+        'title: "Before --- after"'
+        'author: "Test Author"'
+        'created: 2025-03-04'
+        'description: "Old --- new, compared"'
+        'status: published'
+        'categories: ["Dashes"]'
+        'tags: ["csharp"]'
+        'slug: "dashes"'
+        '---'
+        ''
+        'Body text.'
+        ''
+        '---'
+        ''
+        'A thematic break in the body.'
+    ) -join "`n"
+    $crlf = @(
+        '---  '
+        'title: "Carriage Returns"'
+        'author: "Test Author"'
+        'created: 2025-02-01'
+        'description: "Written on Windows"'
+        'status: published'
+        'categories: ["Windows"]'
+        'tags: ["csharp"]'
+        'slug: "crlf"'
+        "--- `t"
+        ''
+        'Body text.'
+    ) -join "`r`n"
+    Set-Content -LiteralPath (Join-Path $blog 'dashes.md') -Value $dashes
+    Set-Content -LiteralPath (Join-Path $blog 'crlf.md') -Value $crlf
+    try {
+        $readme = Invoke-Index -Root $root
+        $expected = @(
+            '### [Before --- after](./content/blog/dashes.md)'
+            '**Published:** March 4, 2025'
+            'Old --- new, compared'
+            '**Categories:** Dashes'
+            '### [Carriage Returns](./content/blog/crlf.md)'
+            '**Categories:** Windows'
+        )
+        foreach ($line in $expected) {
+            if (-not $readme.Contains($line)) {
+                return "the index is missing [$line]"
+            }
+        }
+        if ($readme -notmatch '\*\*Total Posts:\*\* 2') {
+            return 'the index did not report 2 posts'
+        }
+        return $null
+    }
+    finally {
+        Remove-Item -LiteralPath $root -Recurse -Force
+    }
+}
+
 Write-Host ''
 if ($script:Failures -gt 0) {
     Write-Host "$script:Failures of $script:Count case(s) failed." -ForegroundColor Red
